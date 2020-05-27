@@ -9,8 +9,18 @@ import (
 	"my/blog-backend/model"
 	"net/http"
 	"strconv"
-	"time"
 )
+
+// 请求参数
+type ArticleDataReq struct {
+	ID       int64
+	Title    string
+	Summary  string
+	Content  string
+	Status   model.ArticleStatus
+	AuthorID int64
+	Image    string
+}
 
 func AddArticle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	buf, err := ioutil.ReadAll(r.Body)
@@ -19,14 +29,7 @@ func AddArticle(w http.ResponseWriter, r *http.Request, params httprouter.Params
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	type data struct {
-		Title    string
-		Summary  string
-		Content  string
-		Status   int32
-		AuthorID int64
-	}
-	s := &data{}
+	s := &ArticleDataReq{}
 	err = json.Unmarshal(buf, s)
 	if err != nil {
 		log.Error(err)
@@ -34,7 +37,7 @@ func AddArticle(w http.ResponseWriter, r *http.Request, params httprouter.Params
 		return
 	}
 
-	err = dao.ArticleInfo.Insert(s.Title, s.Summary, "", s.Content, s.AuthorID, model.ArticleStatus(s.Status), time.Now())
+	err = dao.ArticleInfo.Insert(s.Title, s.Summary, s.Image, s.Content, s.AuthorID, s.Status)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -49,6 +52,43 @@ func AddArticle(w http.ResponseWriter, r *http.Request, params httprouter.Params
 
 	w.Write(buf)
 	return
+}
+
+func UpdateArticle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	buf, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	log.Info(string(buf))
+	s := &ArticleDataReq{}
+	err = json.Unmarshal(buf, s)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = dao.ArticleInfo.Update(s.ID, s.Title, s.Summary, s.Image, s.Content, s.AuthorID, s.Status)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	//var buf []byte
+	buf, err = json.Marshal(map[string]interface{}{"code": 20000})
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+
+	w.Write(buf)
+	return
+}
+
+func DeleteArticle(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
 }
 
 func ArticleList(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -79,7 +119,14 @@ func ArticleList(w http.ResponseWriter, r *http.Request, params httprouter.Param
 
 	items := make([]interface{}, 0)
 	for _, one := range list {
-		items = append(items, map[string]interface{}{"id": one.ID, "timestamp": one.PublishedTime.Unix(), "author_id": one.AuthorID, "status": one.Status, "title": one.Title, "summary": one.Summary})
+		items = append(items, map[string]interface{}{
+			"id":        one.ID,
+			"title":     one.Title,
+			"status":    one.Status,
+			"image":    one.Image,
+			"summary":   one.Summary,
+			"authorId":  one.AuthorID,
+			"timestamp": one.CreateTime.Unix()})
 	}
 	var buf []byte
 	buf, err = json.Marshal(map[string]interface{}{"data": map[string]interface{}{
@@ -115,11 +162,13 @@ func ArticleDetail(w http.ResponseWriter, r *http.Request, params httprouter.Par
 	var buf []byte
 	buf, err = json.Marshal(map[string]interface{}{"data": map[string]interface{}{
 		"id":        info.ID,
-		"author_id": info.AuthorID,
 		"title":     info.Title,
+		"status":    info.Status,
+		"image":    info.Image,
 		"summary":   info.Summary,
+		"authorId":  info.AuthorID,
+		"timestamp": info.CreateTime.Unix(),
 		"content":   content.Content,
-		//"published_time": content.pulished_ti
 	}, "code": 20000})
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")

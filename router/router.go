@@ -23,6 +23,8 @@ func Init() {
 
 	//article
 	post("/api/article/create", controller.AddArticle)
+	post("/api/article/update", controller.UpdateArticle)
+	delete("/api/article/delete", controller.DeleteArticle)
 	get("/api/article/list", controller.ArticleList)
 	get("/api/article/detail", controller.ArticleDetail)
 
@@ -35,6 +37,14 @@ func get(path string, handles ...httprouter.Handle) {
 
 func post(path string, handles ...httprouter.Handle) {
 	Router.POST(path, wrapper(handles...))
+}
+
+func put(path string, handles ...httprouter.Handle) {
+	Router.PUT(path, wrapper(handles...))
+}
+
+func delete(path string, handles ...httprouter.Handle) {
+	Router.DELETE(path, wrapper(handles...))
 }
 
 func wrapper(handles ...httprouter.Handle) httprouter.Handle {

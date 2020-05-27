@@ -25,11 +25,10 @@ func createArticleInfoTable() {
 		id BIGINT(20) NOT NULL AUTO_INCREMENT,
 		title varchar(64) DEFAULT NULL,
 		status INT(11) DEFAULT NULL,
-		img_url varchar(64) DEFAULT  NULL,
+		image LONGTEXT DEFAULT  NULL,
 		summary TEXT DEFAULT NULL,
 		author_id BIGINT(20) DEFAULT NULL ,
 		content_id BIGINT(20) DEFAULT NULL,
-		published_time DATETIME,
 		create_time DATETIME,
 		update_time DATETIME,
 		PRIMARY KEY (id)
@@ -48,7 +47,7 @@ type ArticleInfoDao struct {
 
 var ArticleInfo = new(ArticleInfoDao)
 
-func (a *ArticleInfoDao) Insert(title, summary, imgUrl, content string, authorID int64, status model.ArticleStatus, publishTime time.Time) error {
+func (a *ArticleInfoDao) Insert(title, summary, image, content string, authorID int64, status model.ArticleStatus) error {
 	tx, err := ConnDB.Begin()
 	if err != nil {
 		log.Error(err)
@@ -72,7 +71,7 @@ func (a *ArticleInfoDao) Insert(title, summary, imgUrl, content string, authorID
 		log.Error(err)
 		return err
 	}
-	_, err = tx.Exec("insert into blog_article_info (title, status, img_url, summary, author_id, content_id, published_time, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?)", title, status, imgUrl, summary, authorID, contentID, publishTime, time.Now(), time.Now())
+	_, err = tx.Exec("insert into blog_article_info (title, status, image, summary, author_id, content_id, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?)", title, status, image, summary, authorID, contentID, time.Now(), time.Now())
 	if err != nil {
 		log.Error(err)
 		return err
@@ -83,6 +82,45 @@ func (a *ArticleInfoDao) Insert(title, summary, imgUrl, content string, authorID
 	}
 	return nil
 }
+
+func (a *ArticleInfoDao) Update(ID int64, title, summary, image, content string, authorID int64, status model.ArticleStatus) error {
+	tx, err := ConnDB.Begin()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	defer func() {
+		err = tx.Rollback()
+		if err != sql.ErrTxDone && err != nil {
+			log.Error(err)
+		}
+	}()
+	//var result sql.Result
+	_, err = tx.Exec("update blog_article_info set title=?, status=?, image=?, summary=?, author_id=?, update_time=? where id=?", title, status, image, summary, authorID, time.Now(), ID)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	info := &model.ArticleInfo{}
+	sqlStr := fmt.Sprintf("select * from %s where id = %d", tableArticleInfo, ID)
+	tx.QueryRow(sqlStr).Scan(&info.ID, &info.Title, &info.Status, &info.Image, &info.Summary, &info.AuthorID, &info.ContentID, &info.CreateTime, &info.UpdateTime)
+
+	_, err = tx.Exec("update blog_article_content set content=?, update_time=? where id=?", content, time.Now(), info.ContentID)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	if err = tx.Commit(); err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
+//func (a *ArticleInfoDao) Delete(title, summary, imgUrl, content string, authorID int64, status model.ArticleStatus) error {
+//
+//}
 
 func (a *ArticleInfoDao) List(page, limit int64) (int64, []*model.ArticleInfo, error) {
 	var err error
@@ -101,7 +139,7 @@ func (a *ArticleInfoDao) List(page, limit int64) (int64, []*model.ArticleInfo, e
 	list := make([]*model.ArticleInfo, 0)
 	for rows.Next() {
 		info := &model.ArticleInfo{}
-		err = rows.Scan(&info.ID, &info.Title, &info.Status, &info.ImgUrl, &info.Summary, &info.AuthorID, &info.ContentID, &info.PublishedTime, &info.CreateTime, &info.UpdateTime) //不scan会导致连接不释放
+		err = rows.Scan(&info.ID, &info.Title, &info.Status, &info.Image, &info.Summary, &info.AuthorID, &info.ContentID, &info.CreateTime, &info.UpdateTime) //不scan会导致连接不释放
 		if err != nil {
 			log.Error(err)
 			return 0, nil, err
@@ -122,7 +160,7 @@ func (a *ArticleInfoDao) List(page, limit int64) (int64, []*model.ArticleInfo, e
 func (a *ArticleInfoDao) Detail(id int64) (*model.ArticleInfo, *model.ArticleContent, error) {
 	sqlStr := fmt.Sprintf("select * from %s where id = %d", tableArticleInfo, id)
 	info := &model.ArticleInfo{}
-	err := ConnDB.QueryRow(sqlStr).Scan(&info.ID, &info.Title, &info.Status, &info.ImgUrl, &info.Summary, &info.AuthorID, &info.ContentID, &info.PublishedTime, &info.CreateTime, &info.UpdateTime)
+	err := ConnDB.QueryRow(sqlStr).Scan(&info.ID, &info.Title, &info.Status, &info.Image, &info.Summary, &info.AuthorID, &info.ContentID, &info.CreateTime, &info.UpdateTime)
 	if err != nil {
 		log.Error(err)
 		return nil, nil, err

@@ -19,7 +19,7 @@ func createArticleContentTable() {
 	}
 	createArticleContentSql := `CREATE TABLE blog_article_content (
 		id BIGINT(20) NOT NULL AUTO_INCREMENT,
-		content TEXT DEFAULT NULL ,
+		content LONGTEXT DEFAULT NULL ,
 		create_time DATETIME,
 		update_time DATETIME,
 		PRIMARY KEY (id)
