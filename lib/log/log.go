@@ -3,11 +3,30 @@ package log
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"os"
 	"runtime"
 	"strings"
 )
 
 var logger = logrus.New()
+
+func init() {
+	// 设置日志格式为json格式
+	//logger.SetFormatter(&log.JSONFormatter{})
+
+	// 设置将日志输出到标准输出（默认的输出为stderr，标准错误）
+	// 日志消息输出可以是任意的io.writer类型
+	//log.SetOutput(os.Stdout)
+	errr := os.Mkdir("log", os.ModePerm)
+	if errr != nil {
+		panic(errr)
+	}
+	f, err := os.Create("log/log.txt")
+	if err != nil {
+		panic(err)
+	}
+	logger.SetOutput(f)
+}
 
 // 封装logrus.Fields
 type Fields logrus.Fields
@@ -16,10 +35,10 @@ func SetLogLevel(level logrus.Level) {
 	logger.Level = level
 }
 
-//func SetLogFormatter(formatter logrus.Formatter) {
-//	logger.Formatter = formatter
-//	logger.SetOutput()
-//}
+func SetLogFormatter(formatter logrus.Formatter) {
+	logger.Formatter = formatter
+	//logger.SetOutput()
+}
 
 // Debug
 func Debug(args ...interface{}) {
