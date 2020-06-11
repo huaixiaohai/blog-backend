@@ -17,11 +17,34 @@ func init() {
 	// 设置将日志输出到标准输出（默认的输出为stderr，标准错误）
 	// 日志消息输出可以是任意的io.writer类型
 	//log.SetOutput(os.Stdout)
-	errr := os.Mkdir("log", os.ModePerm)
-	if errr != nil {
-		panic(errr)
+
+	//golang判断文件或文件夹是否存在的方法为使用os.Stat()函数返回的错误值进行判断:
+	//
+	//如果返回的错误为nil,说明文件或文件夹存在
+	//如果返回的错误类型使用os.IsNotExist()判断为true,说明文件或文件夹不存在
+	//如果返回的错误为其它类型,则不确定是否在存在
+
+	isExist := func(path string) bool {
+		_, err := os.Stat("log")
+		if err != nil && os.IsNotExist(err) {
+			return false
+		}
+		return true
 	}
-	f, err := os.Create("log/log.txt")
+	var err error
+	if !isExist("log") {
+		err = os.Mkdir("log", os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	var f *os.File
+	if !isExist("log/log.txt") {
+		f, err = os.Create("log/log.txt")
+	} else {
+		f, err = os.Open("log/log.txt")
+	}
 	if err != nil {
 		panic(err)
 	}

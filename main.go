@@ -4,6 +4,7 @@ import (
 	"my/blog-backend/conf"
 	_ "my/blog-backend/dao"
 	"my/blog-backend/lib/log"
+	"my/blog-backend/lib/redis"
 	"my/blog-backend/router"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 )
 
 func main() {
+	initRedis()
 	router.Init()
 	s := &http.Server{
 		Addr:    ":" + conf.C.ServerPort,
@@ -41,4 +43,9 @@ func waitExit() {
 		"signal": i,
 	})
 	log.Info("服务退出")
+}
+
+func initRedis() {
+	cr := conf.C.Redis
+	redis.RegisterRedisPool(cr.Dsn, cr.Password, cr.MaxIdle, cr.CatchDB)
 }

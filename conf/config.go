@@ -14,6 +14,7 @@ var (
 type Config struct {
 	ServerPort string
 	DB         *DB
+	Redis      *Redis
 }
 
 type DB struct {
@@ -21,6 +22,13 @@ type DB struct {
 	URL             string
 	ConnMaxLifeTime int
 	MaxIdleConns    int
+}
+
+type Redis struct {
+	Dsn      string
+	Password string
+	MaxIdle  int
+	CatchDB  int
 }
 
 func init() {

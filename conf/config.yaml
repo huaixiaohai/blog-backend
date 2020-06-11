@@ -5,3 +5,9 @@ db:
   url: root:2015.ami@tcp(localhost:3306)/blog?charset=utf8&parseTime=true
   connMaxLifeTime: 100
   maxOpenConns: 100
+
+redis:
+  dsn: 127.0.0.1:6379
+  password:
+  maxidle: 10
+  catchdb: 0

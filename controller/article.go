@@ -6,10 +6,13 @@ import (
 	"io/ioutil"
 	"my/blog-backend/dao"
 	"my/blog-backend/lib/log"
+	"my/blog-backend/lib/redis"
 	"my/blog-backend/model"
 	"net/http"
 	"strconv"
 )
+
+const RKBlogPV = "redis_key_blog_pv_"
 
 // 请求参数
 type ArticleDataReq struct {
@@ -123,7 +126,7 @@ func ArticleList(w http.ResponseWriter, r *http.Request, params httprouter.Param
 			"id":        one.ID,
 			"title":     one.Title,
 			"status":    one.Status,
-			"image":    one.Image,
+			"image":     one.Image,
 			"summary":   one.Summary,
 			"authorId":  one.AuthorID,
 			"timestamp": one.CreateTime.Unix()})
@@ -164,7 +167,7 @@ func ArticleDetail(w http.ResponseWriter, r *http.Request, params httprouter.Par
 		"id":        info.ID,
 		"title":     info.Title,
 		"status":    info.Status,
-		"image":    info.Image,
+		"image":     info.Image,
 		"summary":   info.Summary,
 		"authorId":  info.AuthorID,
 		"timestamp": info.CreateTime.Unix(),
@@ -174,4 +177,9 @@ func ArticleDetail(w http.ResponseWriter, r *http.Request, params httprouter.Par
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(buf)
+	redisKey := RKBlogPV + strconv.FormatInt(id, 10)
+	//if !redis.EXISTS(redisKey) {
+	//	redis.SET(redisKey, 0)
+	//}
+	redis.INCR(redisKey)
 }
