@@ -43,7 +43,7 @@ func init() {
 	if !isExist("log/log.txt") {
 		f, err = os.Create("log/log.txt")
 	} else {
-		f, err = os.Open("log/log.txt")
+		f, err = os.OpenFile("log/log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	}
 	if err != nil {
 		panic(err)
